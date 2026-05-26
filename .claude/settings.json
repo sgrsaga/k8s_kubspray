@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(terraform fmt:*)",
+      "Bash(terraform validate:*)",
+      "Bash(terraform output:*)",
+      "Bash(terraform init:*)",
+      "Bash(terraform plan:*)",
+      "Bash(terraform state list:*)",
+      "Bash(terraform -chdir=terraform fmt:*)",
+      "Bash(terraform -chdir=terraform validate:*)",
+      "Bash(terraform -chdir=terraform output:*)",
+      "Bash(terraform -chdir=terraform init:*)",
+      "Bash(terraform -chdir=terraform plan:*)",
+      "Bash(terraform -chdir=terraform state list:*)",
+
+      "Bash(aws sts get-caller-identity:*)",
+      "Bash(aws s3api head-bucket:*)",
+      "Bash(aws ec2 describe-instances:*)",
+      "Bash(aws ec2 describe-vpcs:*)",
+      "Bash(aws ec2 describe-subnets:*)",
+      "Bash(aws ec2 describe-security-groups:*)",
+      "Bash(aws ec2 describe-nat-gateways:*)",
+      "Bash(aws ec2 describe-addresses:*)",
+      "Bash(aws ec2 describe-route-tables:*)",
+      "Bash(aws elbv2 describe-load-balancers:*)",
+      "Bash(aws elbv2 describe-target-health:*)",
+      "Bash(aws route53 list-resource-record-sets:*)",
+      "Bash(aws route53 list-hosted-zones:*)",
+
+      "Bash(./scripts/render-inventory.sh:*)",
+      "Bash(./scripts/kubespray.sh * cluster.yml --check)",
+      "Bash(./scripts/kubespray.sh * cluster.yml --check:*)",
+
+      "Bash(docker images:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker version:*)",
+
+      "Bash(kubectl get:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(kubectl version:*)",
+      "Bash(kubectl config:*)",
+      "Bash(kubectl --kubeconfig=*)",
+      "Bash(KUBECONFIG=* kubectl get:*)",
+      "Bash(KUBECONFIG=* kubectl describe:*)",
+      "Bash(KUBECONFIG=* kubectl logs:*)",
+
+      "Bash(jq:*)",
+      "Bash(yq:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+
+      "Read(//home/ubuntu/k8s_kubespray/**)"
+    ],
+    "deny": [
+      "Bash(terraform apply:*)",
+      "Bash(terraform destroy:*)",
+      "Bash(terraform -chdir=terraform apply:*)",
+      "Bash(terraform -chdir=terraform destroy:*)",
+      "Bash(./scripts/kubespray.sh * cluster.yml)",
+      "Bash(./scripts/kubespray.sh * upgrade-cluster.yml:*)",
+      "Bash(./scripts/kubespray.sh * reset.yml:*)",
+      "Bash(./scripts/install-longhorn.sh:*)",
+      "Bash(aws s3api create-bucket:*)",
+      "Bash(aws s3api delete-bucket:*)",
+      "Bash(aws ec2 terminate-instances:*)",
+      "Bash(aws ec2 stop-instances:*)",
+      "Bash(aws route53 change-resource-record-sets:*)",
+      "Bash(rm -rf:*)"
+    ]
+  }
+}

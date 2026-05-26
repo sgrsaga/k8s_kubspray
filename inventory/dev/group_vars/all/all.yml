@@ -1,0 +1,19 @@
+---
+# Cluster identity
+cluster_name: dev.k8s.CHANGE_ME      # set to <env>.k8s.<your-domain>
+
+# Container runtime
+container_manager: containerd
+
+# Kubernetes version (within kubespray v2.30.0's supported range; no `v` prefix)
+kube_version: 1.34.3
+
+# API server HA without an external LB:
+# kubespray runs a localhost haproxy on every node that load-balances across
+# the control-plane peers. kubelet/kube-proxy on each node talk to 127.0.0.1.
+loadbalancer_apiserver_localhost: true
+loadbalancer_apiserver_port: 6443
+
+# SSH (paths are inside the kubespray docker container, not the host)
+ansible_user: ubuntu
+ansible_ssh_private_key_file: /root/.ssh/id_rsa

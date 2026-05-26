@@ -1,0 +1,8 @@
+---
+# Stacked etcd: same 3 nodes as the control plane.
+etcd_deployment_type: host
+etcd_metrics: basic
+
+# Auto-compaction defaults are fine for a 3-node cluster; surfaced here so
+# operators see them when tuning later.
+etcd_compaction_retention: "8"
