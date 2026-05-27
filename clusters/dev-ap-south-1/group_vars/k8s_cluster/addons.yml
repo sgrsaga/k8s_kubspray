@@ -1,0 +1,27 @@
+---
+# --- Core tooling ---
+helm_enabled: true
+metrics_server_enabled: true
+
+# --- GitOps ---
+argocd_enabled: true
+argocd_namespace: argocd
+
+# --- TLS / certificate management ---
+cert_manager_enabled: true
+cert_manager_namespace: cert-manager
+
+# --- Ingress / load balancing ---
+# Kong is installed separately via Helm (NodePort 30080/30443).
+# No in-cluster LB controller — public traffic uses Route53 multi-A to node public IPs.
+ingress_nginx_enabled: false
+metallb_enabled: false
+
+# --- Storage ---
+# Longhorn is installed post-cluster via playbooks/longhorn.yml.
+# No EBS CSI — storage is Longhorn only.
+csi_driver_enabled: false
+local_path_provisioner_enabled: false
+
+# --- Registry ---
+registry_enabled: false

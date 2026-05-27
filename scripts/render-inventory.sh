@@ -1,87 +1,90 @@
 #!/usr/bin/env bash
-# Regenerate the [all] block + [bastion] block of inventory/<env>/inventory.ini
-# from the env's Terraform outputs. Bare-metal lines (commented or active) are
-# preserved untouched.
-#
-# Usage:
-#   ./scripts/render-inventory.sh <env>          # uses terraform/ workspace already init'd for <env>
-#   ./scripts/render-inventory.sh <env> --init   # re-runs `terraform init -reconfigure` first
-#
-# Requires: terraform, jq.
-
 set -euo pipefail
 
-ENV="${1:?env required (dev|ppe|pro)}"
-DO_INIT="${2:-}"
+# Usage: ./scripts/render-inventory.sh <cluster> [--init]
+#
+# Reads terraform output for the given cluster and rewrites the [all] block
+# in clusters/<cluster>/inventory.ini with real node public IPs.
+# Bare-metal lines (commented or active) are preserved untouched.
+#
+#   ./scripts/render-inventory.sh dev-ap-south-1
+#   ./scripts/render-inventory.sh dev-ap-south-1 --init   # re-run terraform init first
+
+CLUSTER="${1:?Usage: ./scripts/render-inventory.sh <cluster> [--init]}"
+INIT=false
+[[ "${2:-}" == "--init" ]] && INIT=true
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TF_DIR="${REPO_ROOT}/terraform"
-INV_FILE="${REPO_ROOT}/inventory/${ENV}/inventory.ini"
+TF_DIR="${REPO_ROOT}/terraform/aws"
+CLUSTER_DIR="${REPO_ROOT}/clusters/${CLUSTER}"
+INVENTORY="${CLUSTER_DIR}/inventory.ini"
 
 for cmd in terraform jq; do
-  if ! command -v "${cmd}" >/dev/null 2>&1; then
-    echo "Required command not found: ${cmd}" >&2
-    exit 1
-  fi
+  command -v "$cmd" &>/dev/null || { echo "Error: $cmd not found in PATH" >&2; exit 1; }
 done
 
-if [[ ! -f "${INV_FILE}" ]]; then
-  echo "Inventory file not found: ${INV_FILE}" >&2
+if [[ ! -f "${TF_DIR}/${CLUSTER}.tfvars" ]]; then
+  echo "Error: ${TF_DIR}/${CLUSTER}.tfvars not found" >&2
   exit 1
 fi
 
-if [[ "${DO_INIT}" == "--init" ]]; then
-  echo "==> Re-initialising terraform backend for ${ENV}"
-  terraform -chdir="${TF_DIR}" init -reconfigure \
-    -backend-config="backends/${ENV}.hcl" -input=false
-fi
-
-echo "==> Reading terraform outputs for ${ENV}"
-TF_OUT="$(terraform -chdir="${TF_DIR}" output -json)"
-
-BASTION_IP="$(jq -r '.bastion_public_ip.value' <<<"${TF_OUT}")"
-mapfile -t NODE_IPS < <(jq -r '.node_private_ips.value[]' <<<"${TF_OUT}")
-
-if [[ -z "${BASTION_IP}" || "${BASTION_IP}" == "null" ]]; then
-  echo "Could not read bastion_public_ip from terraform state. Did you run 'terraform apply' for ${ENV}?" >&2
-  exit 1
-fi
-if [[ "${#NODE_IPS[@]}" -lt 3 ]]; then
-  echo "Expected >=3 node_private_ips, got ${#NODE_IPS[@]}" >&2
+if [[ ! -f "${INVENTORY}" ]]; then
+  echo "Error: inventory not found: ${INVENTORY}" >&2
   exit 1
 fi
 
-echo "    bastion: ${BASTION_IP}"
+if [[ "${INIT}" == true ]]; then
+  echo "Re-initialising Terraform backend for ${CLUSTER}..."
+  (cd "${TF_DIR}" && terraform init \
+    -backend-config="backends/${CLUSTER}.hcl" \
+    -reconfigure -no-color)
+fi
+
+echo "Reading Terraform outputs for ${CLUSTER}..."
+TF_OUTPUT=$(cd "${TF_DIR}" && terraform output \
+  -var-file="${CLUSTER}.tfvars" \
+  -var="cluster_name=${CLUSTER}" \
+  -json 2>/dev/null)
+
+# Extract public IPs — nodes are reachable directly (no bastion).
+mapfile -t NODE_IPS < <(echo "${TF_OUTPUT}" | jq -r '.node_public_ips.value[]')
+
+if [[ ${#NODE_IPS[@]} -eq 0 ]]; then
+  echo "Error: no node_public_ips in Terraform output. Has terraform apply been run?" >&2
+  exit 1
+fi
+
+echo "Found ${#NODE_IPS[@]} node(s): ${NODE_IPS[*]}"
+
+# Build replacement [all] block (cloud nodes only; bare-metal lines preserved by awk).
+ALL_BLOCK="[all]"$'\n'
 for i in "${!NODE_IPS[@]}"; do
-  echo "    node-$((i+1)): ${NODE_IPS[$i]}"
+  N=$((i + 1))
+  IP="${NODE_IPS[$i]}"
+  ALL_BLOCK+="node-${N} ansible_host=${IP} ip=${IP} etcd_member_name=etcd${N}"$'\n'
 done
 
-# Atomic in-place rewrite via a temp file.
-TMP="$(mktemp)"
-trap 'rm -f "${TMP}"' EXIT
+TMPFILE=$(mktemp)
+trap 'rm -f "${TMPFILE}"' EXIT
 
-awk -v B="${BASTION_IP}" \
-    -v N1="${NODE_IPS[0]}" \
-    -v N2="${NODE_IPS[1]}" \
-    -v N3="${NODE_IPS[2]}" '
-BEGIN { in_all=0; in_bastion=0 }
-# Toggle section state on group headers
-/^\[all\][[:space:]]*$/        { in_all=1; in_bastion=0; print; next }
-/^\[bastion\][[:space:]]*$/    { in_bastion=1; in_all=0; print; next }
-/^\[/                          { in_all=0; in_bastion=0; print; next }
+# awk rewrites the [all] block:
+#   - Replaces "node-N ansible_host=..." lines with fresh IPs.
+#   - Preserves commented bare-metal lines verbatim.
+#   - Leaves all other sections untouched.
+awk -v new_block="${ALL_BLOCK}" '
+  /^\[all\]/ {
+    print new_block
+    in_all = 1
+    next
+  }
+  in_all && /^\[/ {
+    in_all = 0
+  }
+  in_all && /^node-[0-9]+ ansible_host=/ {
+    next
+  }
+  { print }
+' "${INVENTORY}" > "${TMPFILE}"
 
-# Rewrite node-N lines inside [all], leave bm-* and comments alone
-in_all && /^node-1[[:space:]]/ { printf "node-1 ansible_host=%s ip=%s etcd_member_name=etcd1\n", N1, N1; next }
-in_all && /^node-2[[:space:]]/ { printf "node-2 ansible_host=%s ip=%s etcd_member_name=etcd2\n", N2, N2; next }
-in_all && /^node-3[[:space:]]/ { printf "node-3 ansible_host=%s ip=%s etcd_member_name=etcd3\n", N3, N3; next }
-
-# Rewrite the bastion line
-in_bastion && /^bastion[[:space:]]/ { printf "bastion ansible_host=%s ansible_user=ubuntu\n", B; next }
-
-{ print }
-' "${INV_FILE}" > "${TMP}"
-
-mv "${TMP}" "${INV_FILE}"
-trap - EXIT
-
-echo "==> Wrote ${INV_FILE}"
+mv "${TMPFILE}" "${INVENTORY}"
+echo "Inventory updated: ${INVENTORY}"

@@ -1,72 +1,67 @@
 #!/usr/bin/env bash
-# Run a kubespray playbook (built-in OR a custom one from this repo) against
-# one of our environments, using the official kubespray Docker image. All
-# kubespray playbooks come from the image; our own playbooks are mounted at
-# /playbooks/.
-#
-# Usage:
-#   ./scripts/kubespray.sh <env> [playbook]
-#
-# Built-in kubespray playbooks (resolve to /kubespray/<name>):
-#   ./scripts/kubespray.sh dev cluster.yml          # first install
-#   ./scripts/kubespray.sh dev scale.yml            # add a (BM) node after editing inventory
-#   ./scripts/kubespray.sh dev upgrade-cluster.yml  # upgrade after bumping kube_version
-#   ./scripts/kubespray.sh dev reset.yml            # destructive teardown
-#
-# Custom playbooks in this repo (mount at /playbooks/, pass absolute path):
-#   ./scripts/kubespray.sh dev /playbooks/longhorn.yml
-#
-# Extra ansible-playbook flags can be passed after the playbook, e.g.:
-#   ./scripts/kubespray.sh dev cluster.yml -e kube_version=1.34.4 --check
-
 set -euo pipefail
 
-ENV="${1:?env required (dev|ppe|pro)}"
-PLAYBOOK="${2:-cluster.yml}"
-shift 2 || shift $# || true
+# Usage: ./scripts/kubespray.sh <cluster> <playbook> [extra-ansible-flags]
+#
+#   ./scripts/kubespray.sh dev-ap-south-1 cluster.yml
+#   ./scripts/kubespray.sh dev-ap-south-1 scale.yml
+#   ./scripts/kubespray.sh dev-ap-south-1 upgrade-cluster.yml
+#   ./scripts/kubespray.sh dev-ap-south-1 reset.yml
+#   ./scripts/kubespray.sh dev-ap-south-1 cluster.yml --list-tasks
+#
+# Environment variables:
+#   KUBESPRAY_VERSION  Docker image tag (default: v2.30.0)
+#   SSH_KEY            Path to SSH private key (default: ~/.ssh/id_rsa)
 
-KSPV="${KUBESPRAY_VERSION:-v2.30.0}"
+CLUSTER="${1:?Usage: ./scripts/kubespray.sh <cluster> <playbook> [flags]}"
+PLAYBOOK="${2:?Usage: ./scripts/kubespray.sh <cluster> <playbook> [flags]}"
+shift 2
+
+KUBESPRAY_VERSION="${KUBESPRAY_VERSION:-v2.30.0}"
 SSH_KEY="${SSH_KEY:-${HOME}/.ssh/id_rsa}"
-
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-INV_DIR="${REPO_ROOT}/inventory/${ENV}"
-PB_DIR="${REPO_ROOT}/playbooks"
+CLUSTER_DIR="${REPO_ROOT}/clusters/${CLUSTER}"
 
-if [[ ! -d "${INV_DIR}" ]]; then
-  echo "Inventory directory not found: ${INV_DIR}" >&2
+if [[ ! -d "${CLUSTER_DIR}" ]]; then
+  echo "Error: cluster directory not found: ${CLUSTER_DIR}" >&2
   exit 1
 fi
 
 if [[ ! -f "${SSH_KEY}" ]]; then
-  echo "SSH key not found: ${SSH_KEY}" >&2
-  echo "Set SSH_KEY=/path/to/key to override (default: ~/.ssh/id_rsa)." >&2
+  echo "Error: SSH key not found: ${SSH_KEY}" >&2
   exit 1
 fi
 
-# Mount /playbooks only if the directory exists (keeps the command minimal
-# for users who never write custom playbooks).
-PB_MOUNT=()
-if [[ -d "${PB_DIR}" ]]; then
-  PB_MOUNT=(-v "${PB_DIR}:/playbooks:ro")
+DOCKER_ARGS=(
+  --rm
+  -v "${CLUSTER_DIR}:/inventory:rw"
+  -v "${SSH_KEY}:/root/.ssh/id_rsa:ro"
+  -e ANSIBLE_CONFIG=/inventory/ansible.cfg
+)
+
+# Mount custom playbooks if the directory exists.
+PLAYBOOKS_DIR="${REPO_ROOT}/playbooks"
+if [[ -d "${PLAYBOOKS_DIR}" ]]; then
+  DOCKER_ARGS+=(-v "${PLAYBOOKS_DIR}:/playbooks:ro")
 fi
 
-echo "==> Running kubespray ${KSPV} :: ${PLAYBOOK} against env=${ENV}"
-
-# Only allocate a TTY when stdin is one; otherwise `docker run -t` fails with
-# "the input device is not a TTY" (CI, non-interactive shells, pipes).
-TTY_FLAGS=(-i)
+# Allocate a TTY only when running interactively.
 if [[ -t 0 ]]; then
-  TTY_FLAGS+=(-t)
+  DOCKER_ARGS+=(-it)
 fi
 
-docker run --rm "${TTY_FLAGS[@]}" \
-  -v "${INV_DIR}:/inventory:rw" \
-  "${PB_MOUNT[@]}" \
-  -v "${SSH_KEY}:/root/.ssh/id_rsa:ro" \
-  -e ANSIBLE_HOST_KEY_CHECKING=False \
-  -e ANSIBLE_CONFIG=/inventory/ansible.cfg \
-  "quay.io/kubespray/kubespray:${KSPV}" \
+# Resolve playbook path: custom playbooks take precedence over built-ins.
+if [[ -d "${PLAYBOOKS_DIR}" && -f "${PLAYBOOKS_DIR}/${PLAYBOOK}" ]]; then
+  PLAYBOOK_PATH="/playbooks/${PLAYBOOK}"
+else
+  PLAYBOOK_PATH="/kubespray/${PLAYBOOK}"
+fi
+
+docker run "${DOCKER_ARGS[@]}" \
+  "quay.io/kubespray/kubespray:${KUBESPRAY_VERSION}" \
   ansible-playbook \
     -i /inventory/inventory.ini \
-    --become --become-user=root \
-    "${PLAYBOOK}" "$@"
+    --private-key /root/.ssh/id_rsa \
+    -e ansible_ssh_common_args="-o StrictHostKeyChecking=no" \
+    "${PLAYBOOK_PATH}" \
+    "$@"

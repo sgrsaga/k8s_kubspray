@@ -1,0 +1,15 @@
+---
+kube_version: 1.34.3
+container_manager: containerd
+cluster_name: dev-ap-south-1
+
+ansible_user: ubuntu
+ansible_become: true
+ansible_ssh_private_key_file: /root/.ssh/id_rsa
+
+# HA API server: local haproxy on every node avoids an external LB.
+loadbalancer_apiserver_localhost: true
+loadbalancer_apiserver_port: 6443
+
+# kubeconfig written to /etc/kubernetes/admin.conf on control-plane nodes.
+kubeconfig_localhost: true
