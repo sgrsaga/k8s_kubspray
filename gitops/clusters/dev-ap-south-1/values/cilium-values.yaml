@@ -12,7 +12,8 @@ envoy:
   enabled: false
 
 # Tunnel mode — VXLAN is safe on AWS (no BGP peering or native routing needed)
-tunnelProtocol: vxlan
+#tunnelProtocol: vxlan
+routingMode: native
 autoDirectNodeRoutes: false
 
 # cgroup v2 — Ubuntu 22.04 mounts cgroupv2 at /sys/fs/cgroup already.
