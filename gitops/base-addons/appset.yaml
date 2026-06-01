@@ -42,7 +42,7 @@ spec:
                   namespace: kong
                   repoURL: https://charts.konghq.com
                   chart: ingress
-                  targetRevision: "0.4.2"
+                  targetRevision: "0.24.0"
                   syncWave: "3"
 
   template:
