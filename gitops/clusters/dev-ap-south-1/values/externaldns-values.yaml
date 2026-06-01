@@ -1,0 +1,47 @@
+# ExternalDNS — automatic Route53 DNS record management
+# Chart: kubernetes-sigs.github.io/external-dns/external-dns
+
+provider: aws
+
+aws:
+  region: ap-south-1
+  # Restrict to this hosted zone only (prevents accidental changes to other zones)
+  # Replace with your actual Route53 Hosted Zone ID
+  zoneIdFilters:
+    - REPLACE_WITH_ZONE_ID
+
+# Only process services/ingresses with the explicit target annotation.
+# Without this, ExternalDNS would publish private Cilium LB IPs instead of the public node IP.
+annotationFilter: "external-dns.alpha.kubernetes.io/target"
+
+sources:
+  - service
+  - ingress
+
+# sync = delete stale records when resources are removed; upsert-only = never delete
+policy: sync
+
+registry: txt
+txtOwnerId: "dev-ap-south-1"
+
+domainFilters:
+  - devops-saga.click
+
+interval: 1m
+
+# AWS credentials from Secret (created manually before first sync):
+#   kubectl create secret generic externaldns-aws-creds \
+#     -n externaldns \
+#     --from-literal=access_key_id=<KEY_ID> \
+#     --from-literal=secret_access_key=<SECRET>
+env:
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: externaldns-aws-creds
+        key: access_key_id
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: externaldns-aws-creds
+        key: secret_access_key

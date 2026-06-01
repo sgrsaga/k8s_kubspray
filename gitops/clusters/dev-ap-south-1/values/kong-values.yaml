@@ -1,0 +1,29 @@
+# Kong Ingress Controller
+# Chart: charts.konghq.com/ingress
+
+proxy:
+  type: LoadBalancer
+  # ExternalDNS reads this annotation to publish the node's public IP (not the private LB IP)
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "13.207.38.68"
+    external-dns.alpha.kubernetes.io/hostname: "*.devops-saga.click"
+  http:
+    enabled: true
+    servicePort: 80
+    containerPort: 8000
+  tls:
+    enabled: true
+    servicePort: 443
+    containerPort: 8443
+
+ingressController:
+  enabled: true
+  installCRDs: false   # Gateway API CRDs installed separately
+
+admin:
+  enabled: false
+
+replicaCount: 1
+
+podDisruptionBudget:
+  enabled: false

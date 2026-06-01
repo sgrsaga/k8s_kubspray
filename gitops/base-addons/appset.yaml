@@ -1,0 +1,77 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: base-addons
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          # Axis 1 — each file found at gitops/clusters/*/cluster.yaml is one target cluster.
+          # To register a new cluster: add a cluster.yaml + values/ directory.
+          - git:
+              repoURL: https://github.com/sgrsaga/k8s_kubspray.git
+              revision: dev
+              files:
+                - path: "gitops/clusters/*/cluster.yaml"
+          # Axis 2 — the four base addons deployed to every registered cluster.
+          # Sync waves enforce install order: cilium (CNI) → cert-manager → externaldns → kong
+          - list:
+              elements:
+                - addon: cilium
+                  namespace: kube-system
+                  repoURL: https://helm.cilium.io
+                  chart: cilium
+                  targetRevision: "1.17.0"
+                  syncWave: "0"
+                - addon: cert-manager
+                  namespace: cert-manager
+                  repoURL: https://charts.jetstack.io
+                  chart: cert-manager
+                  targetRevision: "v1.16.2"
+                  syncWave: "1"
+                - addon: externaldns
+                  namespace: externaldns
+                  repoURL: https://kubernetes-sigs.github.io/external-dns/
+                  chart: external-dns
+                  targetRevision: "1.15.0"
+                  syncWave: "2"
+                - addon: kong
+                  namespace: kong
+                  repoURL: https://charts.konghq.com
+                  chart: ingress
+                  targetRevision: "0.4.2"
+                  syncWave: "3"
+
+  template:
+    metadata:
+      # e.g. "cilium-dev-ap-south-1", "kong-prod-eu-west-1"
+      name: "{{.addon}}-{{.name}}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{.syncWave}}"
+    spec:
+      project: default
+      # Multi-source: Helm chart from the official registry + values from this git repo.
+      # "$values" is the ref alias for the git source below.
+      sources:
+        - repoURL: https://github.com/sgrsaga/k8s_kubspray.git
+          targetRevision: HEAD
+          ref: values
+        - repoURL: "{{.repoURL}}"
+          chart: "{{.chart}}"
+          targetRevision: "{{.targetRevision}}"
+          helm:
+            valueFiles:
+              - "$values/gitops/clusters/{{.name}}/values/{{.addon}}-values.yaml"
+      destination:
+        server: "{{.server}}"
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

@@ -1,0 +1,43 @@
+# Cilium — eBPF kube-proxy replacement, Envoy L7 proxy disabled
+# Chart: helm.cilium.io/cilium
+
+# Replace kube-proxy entirely with eBPF
+kubeProxyReplacement: true
+k8sServiceHost: ""   # auto-detected from in-cluster env when empty
+k8sServicePort: ""
+
+# Disable Envoy DaemonSet (L7 proxy / the "haproxy-equivalent" in Cilium).
+# Set to false if you do not need HTTP-level network policies or gRPC-aware LB.
+envoy:
+  enabled: false
+
+# Tunnel mode — VXLAN is safe on AWS (no BGP peering or native routing needed)
+tunnelProtocol: vxlan
+autoDirectNodeRoutes: false
+
+# cgroup v2 — Ubuntu 22.04 mounts cgroupv2 at /sys/fs/cgroup already.
+# Disable the mount-cgroup init container to avoid permission errors on EC2.
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
+
+# LB-IPAM — Cilium manages LoadBalancer IP assignment (replaces MetalLB)
+loadBalancer:
+  mode: dsr     # Direct Server Return for better performance; use 'snat' if DSR unsupported
+
+# Hubble — in-cluster network observability
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: false   # enable when you have ingress for it
+
+# IPAM
+ipam:
+  mode: kubernetes
+
+# Operator
+operator:
+  replicas: 1   # single node; increase to 2+ for HA clusters

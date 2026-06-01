@@ -1,0 +1,23 @@
+---
+# Wrapper around kubespray's cluster.yml.
+#
+# Cilium v1.14+ init containers drop CAP_DAC_OVERRIDE, so they cannot write
+# to /opt/cni/bin when it is owned by the kube user (UID 999) that kubespray
+# creates it with. The post-play below re-owns the directory to root:root
+# after kubespray has created it but before Cilium pods are rescheduled.
+
+- name: Run kubespray cluster provisioning
+  ansible.builtin.import_playbook: /kubespray/cluster.yml
+
+- name: Fix /opt/cni/bin ownership for Cilium compatibility
+  hosts: k8s_cluster
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Ensure /opt/cni/bin is owned by root
+      ansible.builtin.file:
+        path: /opt/cni/bin
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"

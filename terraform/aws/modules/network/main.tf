@@ -1,5 +1,10 @@
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 locals {
   name_prefix = var.cluster_name
+  azs         = slice(data.aws_availability_zones.available.names, 0, length(var.public_subnet_cidrs))
 }
 
 resource "aws_vpc" "this" {
@@ -21,29 +26,29 @@ resource "aws_internet_gateway" "this" {
 }
 
 resource "aws_subnet" "public" {
-  count = length(var.azs)
+  count = length(local.azs)
 
   vpc_id                  = aws_vpc.this.id
   cidr_block              = var.public_subnet_cidrs[count.index]
-  availability_zone       = var.azs[count.index]
+  availability_zone       = local.azs[count.index]
   map_public_ip_on_launch = true
 
   tags = merge(var.tags, {
-    Name = "${local.name_prefix}-public-${var.azs[count.index]}"
+    Name = "${local.name_prefix}-public-${local.azs[count.index]}"
     Tier = "public"
   })
 }
 
 resource "aws_subnet" "private" {
-  count = length(var.azs)
+  count = length(local.azs)
 
   vpc_id                  = aws_vpc.this.id
   cidr_block              = var.private_subnet_cidrs[count.index]
-  availability_zone       = var.azs[count.index]
+  availability_zone       = local.azs[count.index]
   map_public_ip_on_launch = false
 
   tags = merge(var.tags, {
-    Name = "${local.name_prefix}-private-${var.azs[count.index]}"
+    Name = "${local.name_prefix}-private-${local.azs[count.index]}"
     Tier = "private"
   })
 }
@@ -68,7 +73,7 @@ resource "aws_nat_gateway" "this" {
   subnet_id     = aws_subnet.public[count.index].id
 
   tags = merge(var.tags, {
-    Name = "${local.name_prefix}-nat-${var.azs[count.index]}"
+    Name = "${local.name_prefix}-nat-${local.azs[count.index]}"
   })
 
   depends_on = [aws_internet_gateway.this]
@@ -103,7 +108,7 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.this.id
 
   tags = merge(var.tags, {
-    Name = var.nat_gateway_count == 1 ? "${local.name_prefix}-private-rt" : "${local.name_prefix}-private-rt-${var.azs[count.index]}"
+    Name = var.nat_gateway_count == 1 ? "${local.name_prefix}-private-rt" : "${local.name_prefix}-private-rt-${local.azs[count.index]}"
   })
 }
 

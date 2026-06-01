@@ -6,6 +6,13 @@ docker run --rm -it --mount type=bind,source="$(pwd)"/clusters/dev-ap-south-1,ds
 # Inside the container you may now run the kubespray playbooks:
 ansible-playbook -i /inventory/inventory.ini --private-key /root/.ssh/id_rsa cluster.yml
 
+## Configure kubectl in local
+* download the file /etc/kuberneties/admin.conf to local 
+* change the api ip to 127.0.0.1:6443
+* create a ssh tunnel to the server directing local port 6443 to k8 api-server(10.30.0.119:6443)
+ssh -i ~/.ssh/mumbai -f -N -L 6443:10.30.0.119:6443   -o ServerAliveInterval=60   -o ServerAliveCountMax=3   ubuntu@65.0.133.87
+
+ssh -i ~/.ssh/singapore -f -N -L 7443:10.31.0.198:6443   -o ServerAliveInterval=60   -o ServerAliveCountMax=3   ubuntu@13.250.51.125
 
 
 # Notes
@@ -18,4 +25,4 @@ Specially in cloud public ip is NAT'd addres so use the NIC bing address so it p
 3. Cilium - cgroup permision issues. Not allowed to create additiona cgroup use the latest exisitng cgroupv2 in clusters/dev-ap-south-1/group_vars/k8s_cluster/k8s-net-cilium.yml
 cilium_cgroup_host_root: "/sys/fs/cgroup"
 cilium_cgroup_auto_mount: false
-- Change /opt/cni/bin ownership to root:root so the container's root process (UID 0) owns the directory and can write to it.
+- /opt/cni/bin ownership is fixed automatically by playbooks/cluster.yml (re-owns to root:root after kubespray creates it with kube/UID-999).

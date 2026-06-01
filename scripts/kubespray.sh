@@ -17,7 +17,7 @@ CLUSTER="${1:?Usage: ./scripts/kubespray.sh <cluster> <playbook> [flags]}"
 PLAYBOOK="${2:?Usage: ./scripts/kubespray.sh <cluster> <playbook> [flags]}"
 shift 2
 
-KUBESPRAY_VERSION="${KUBESPRAY_VERSION:-v2.30.0}"
+KUBESPRAY_VERSION="${KUBESPRAY_VERSION:-v2.31.0}"
 SSH_KEY="${SSH_KEY:-${HOME}/.ssh/id_rsa}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLUSTER_DIR="${REPO_ROOT}/clusters/${CLUSTER}"

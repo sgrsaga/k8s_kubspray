@@ -1,0 +1,14 @@
+---
+# VXLAN tunnel is the safe default on AWS (no BGP, no native routing quirks).
+cilium_tunnel_mode: vxlan
+cilium_auto_direct_node_routes: false
+
+# Hubble provides built-in network observability (flows, metrics).
+cilium_enable_hubble: true
+
+# On Ubuntu 22.04 (cgroupv2 unified), the cgroup hierarchy is already mounted
+# at /sys/fs/cgroup. Telling Cilium to use it directly disables the
+# mount-cgroup init-container (cgroup.autoMount.enabled=false), which is the
+# container that crash-loops with exitCode=1 on AWS EC2 instances.
+cilium_cgroup_host_root: "/sys/fs/cgroup"
+cilium_cgroup_auto_mount: false
