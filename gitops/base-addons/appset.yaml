@@ -41,8 +41,8 @@ spec:
                 - addon: kong
                   namespace: kong
                   repoURL: https://charts.konghq.com
-                  chart: ingress
-                  targetRevision: "0.24.0"
+                  chart: kong
+                  targetRevision: "2.52.0"
                   syncWave: "3"
 
   template:
