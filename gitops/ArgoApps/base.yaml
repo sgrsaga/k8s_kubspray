@@ -19,7 +19,7 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/sgrsaga/k8s_kubspray.git
-        revision: HEAD
+        revision: dev
         directories:
           - path: "gitops/base-addons"
           - path: "gitops/appsets/*"
