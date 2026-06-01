@@ -30,6 +30,8 @@ loadBalancer:
 # Hubble — in-cluster network observability
 hubble:
   enabled: true
+  peerService:
+    clusterDomain: dev-ap-south-1   # matches CoreDNS cluster domain (not the default cluster.local)
   relay:
     enabled: true
   ui:
