@@ -8,7 +8,7 @@ aws:
   # Restrict to this hosted zone only (prevents accidental changes to other zones)
   # Replace with your actual Route53 Hosted Zone ID
   zoneIdFilters:
-    - REPLACE_WITH_ZONE_ID
+    - devops-saga.click
 
 # Only process services/ingresses with the explicit target annotation.
 # Without this, ExternalDNS would publish private Cilium LB IPs instead of the public node IP.

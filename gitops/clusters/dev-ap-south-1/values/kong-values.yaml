@@ -5,7 +5,7 @@ proxy:
   type: LoadBalancer
   # ExternalDNS reads this annotation to publish the node's public IP (not the private LB IP)
   annotations:
-    external-dns.alpha.kubernetes.io/target: "13.207.38.68"
+    external-dns.alpha.kubernetes.io/target: "65.0.133.87"
     external-dns.alpha.kubernetes.io/hostname: "*.devops-saga.click"
   http:
     enabled: true
