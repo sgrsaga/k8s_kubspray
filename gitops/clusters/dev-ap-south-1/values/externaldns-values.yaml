@@ -34,14 +34,14 @@ interval: 1m
 #     -n externaldns \
 #     --from-literal=access_key_id=<KEY_ID> \
 #     --from-literal=secret_access_key=<SECRET>
-env:
-  - name: AWS_ACCESS_KEY_ID
-    valueFrom:
-      secretKeyRef:
-        name: externaldns-aws-creds
-        key: access_key_id
-  - name: AWS_SECRET_ACCESS_KEY
-    valueFrom:
-      secretKeyRef:
-        name: externaldns-aws-creds
-        key: secret_access_key
+# env:
+#   - name: AWS_ACCESS_KEY_ID
+#     valueFrom:
+#       secretKeyRef:
+#         name: externaldns-aws-creds
+#         key: access_key_id
+#   - name: AWS_SECRET_ACCESS_KEY
+#     valueFrom:
+#       secretKeyRef:
+#         name: externaldns-aws-creds
+#         key: secret_access_key
