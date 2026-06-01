@@ -11,10 +11,10 @@ k8sServicePort: ""
 envoy:
   enabled: false
 
-# Tunnel mode — VXLAN is safe on AWS (no BGP peering or native routing needed)
-#tunnelProtocol: vxlan
+# Native routing — pods route directly via the VPC, required for DSR
 routingMode: native
 autoDirectNodeRoutes: false
+ipv4NativeRoutingCIDR: "10.233.64.0/18"   # pod CIDR pool; required with masquerading + native routing
 
 # cgroup v2 — Ubuntu 22.04 mounts cgroupv2 at /sys/fs/cgroup already.
 # Disable the mount-cgroup init container to avoid permission errors on EC2.
