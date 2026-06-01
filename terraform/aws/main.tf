@@ -12,10 +12,10 @@ locals {
   # Public:  offsets 0–2  → e.g. 10.30.0.0/24, 10.30.1.0/24, 10.30.2.0/24
   # Private: offsets 10–12 → e.g. 10.30.10.0/24, 10.30.11.0/24, 10.30.12.0/24
   public_subnet_cidrs = var.public_subnet_cidrs != null ? var.public_subnet_cidrs : [
-    for i in range(length(var.azs)) : cidrsubnet(var.vpc_cidr, 8, i)
+    for i in range(3) : cidrsubnet(var.vpc_cidr, 8, i)
   ]
   private_subnet_cidrs = var.private_subnet_cidrs != null ? var.private_subnet_cidrs : [
-    for i in range(length(var.azs)) : cidrsubnet(var.vpc_cidr, 8, i + 10)
+    for i in range(3) : cidrsubnet(var.vpc_cidr, 8, i + 10)
   ]
 }
 
@@ -24,7 +24,6 @@ module "network" {
 
   cluster_name         = var.cluster_name
   vpc_cidr             = var.vpc_cidr
-  azs                  = var.azs
   public_subnet_cidrs  = local.public_subnet_cidrs
   private_subnet_cidrs = local.private_subnet_cidrs
   nat_gateway_count    = var.nat_gateway_count

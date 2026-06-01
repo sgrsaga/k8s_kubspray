@@ -8,16 +8,6 @@ variable "vpc_cidr" {
   type        = string
 }
 
-variable "azs" {
-  description = "Availability zones to spread subnets across. Length must equal the subnet CIDR list lengths."
-  type        = list(string)
-
-  validation {
-    condition     = length(var.azs) == 3
-    error_message = "Exactly 3 AZs are required."
-  }
-}
-
 variable "public_subnet_cidrs" {
   description = "CIDR blocks for the public subnets, one per AZ."
   type        = list(string)

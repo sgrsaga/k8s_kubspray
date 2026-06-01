@@ -10,7 +10,7 @@ output "vpc_cidr" {
 
 output "azs" {
   description = "Availability zones used by the subnets."
-  value       = var.azs
+  value       = local.azs
 }
 
 output "public_subnet_ids" {

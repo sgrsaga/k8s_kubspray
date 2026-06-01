@@ -1,0 +1,4 @@
+---
+etcd_deployment_type: host
+etcd_metrics: basic
+etcd_compaction_retention: "8"

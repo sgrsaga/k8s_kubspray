@@ -1,0 +1,8 @@
+# Cluster registration for the base-addons ApplicationSet.
+# The 'name' must match the ArgoCD cluster name (set when registering with argocd CLI).
+# For the management cluster (where ArgoCD itself runs) use https://kubernetes.default.svc.
+name: dev-ap-south-1
+server: https://kubernetes.default.svc
+environment: dev
+region: ap-south-1
+provider: aws

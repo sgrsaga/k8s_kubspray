@@ -1,0 +1,24 @@
+# cert-manager — TLS certificate management
+# Chart: charts.jetstack.io/cert-manager
+
+# Install CRDs via Helm (avoids a separate kubectl apply step)
+crds:
+  enabled: true
+
+# Single node — no need for replicas
+replicaCount: 1
+webhook:
+  replicaCount: 1
+cainjector:
+  replicaCount: 1
+
+# Prometheus metrics (optional — enable if you have Prometheus scraping)
+prometheus:
+  enabled: false
+
+# AWS Route53 DNS-01 solver — cert-manager needs Route53 access.
+# Credentials are injected via environment variables from a Kubernetes Secret.
+# Secret must be created manually before first sync:
+#   kubectl create secret generic cert-manager-route53-creds \
+#     -n cert-manager \
+#     --from-literal=secret_access_key=<AWS_SECRET_ACCESS_KEY>

@@ -20,17 +20,6 @@ variable "vpc_cidr" {
   type        = string
 }
 
-variable "azs" {
-  description = "Availability zones for subnets (3 required). Defaults to all three AZs in ap-south-1."
-  type        = list(string)
-  default     = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
-
-  validation {
-    condition     = length(var.azs) == 3
-    error_message = "Exactly 3 availability zones are required."
-  }
-}
-
 variable "public_subnet_cidrs" {
   description = "Public subnet CIDR blocks (one per AZ). If null, derived automatically from vpc_cidr using /24 slices at offsets 0-2."
   type        = list(string)

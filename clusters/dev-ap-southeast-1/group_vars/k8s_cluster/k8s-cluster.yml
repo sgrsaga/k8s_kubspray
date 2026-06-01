@@ -1,0 +1,18 @@
+---
+kube_network_plugin: cilium
+kube_proxy_mode: ipvs
+
+kube_pods_subnet: 10.233.64.0/18
+kube_service_addresses: 10.233.0.0/18
+kube_network_node_prefix: 24
+
+# Reserve resources on each node for kubelet and system processes.
+kubelet_node_allocatable:
+  kube: "cpu=300m,memory=512Mi"
+  system: "cpu=200m,memory=512Mi"
+
+# Eviction thresholds — kubelet starts evicting pods before the node runs out.
+eviction_hard:
+  memory.available: "100Mi"
+  nodefs.available: "5%"
+  imagefs.available: "5%"

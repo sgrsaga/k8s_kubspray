@@ -1,18 +1,43 @@
+# Bootstrap ApplicationSet — scans gitops/appsets/ and applies each ApplicationSet
+# to the management cluster's ArgoCD instance.
+#
+# To add a new ApplicationSet (e.g. a team-specific one):
+#   1. Create gitops/appsets/<name>/appset.yaml
+#   2. Push — this Application will detect and sync it automatically.
+#
+# The base-addons ApplicationSet (gitops/base-addons/appset.yaml) is picked up
+# from here. It then fans out across all registered clusters × all base addons.
+
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
-  name: app-of-apps
+  name: bootstrap-appsets
   namespace: argocd
 spec:
-  project: default
-  source:
-    repoURL: https://github.com/sgrsaga/k8s_kubspray.git
-    targetRevision: main
-    path: ./gitops/Base
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/sgrsaga/k8s_kubspray.git
+        revision: HEAD
+        directories:
+          - path: "gitops/base-addons"
+          - path: "gitops/appsets/*"
+  template:
+    metadata:
+      name: "appset-{{.path.basename}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/sgrsaga/k8s_kubspray.git
+        targetRevision: HEAD
+        path: "{{.path.path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
