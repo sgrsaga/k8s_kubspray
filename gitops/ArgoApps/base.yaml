@@ -19,7 +19,7 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/sgrsaga/k8s_kubspray.git
-        revision: HEAD
+        revision: main
         directories:
           - path: "gitops/base-addons"
           - path: "gitops/appsets/*"
@@ -30,7 +30,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/sgrsaga/k8s_kubspray.git
-        targetRevision: HEAD
+        targetRevision: main
         path: "{{.path.path}}"
       destination:
         server: https://kubernetes.default.svc

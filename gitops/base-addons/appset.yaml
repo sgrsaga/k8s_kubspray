@@ -13,7 +13,7 @@ spec:
           # To register a new cluster: add a cluster.yaml + values/ directory.
           - git:
               repoURL: https://github.com/sgrsaga/k8s_kubspray.git
-              revision: HEAD
+              revision: main
               files:
                 - path: "gitops/clusters/*/cluster.yaml"
           # Axis 2 — the four base addons deployed to every registered cluster.
