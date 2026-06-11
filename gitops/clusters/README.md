@@ -2,8 +2,16 @@
 
 To add a new cluster to the base-addons ApplicationSet:
 
+Install argocd utiliy
+
+```curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+rm argocd-linux-amd64
+```
+
 ## 1. Register the cluster in ArgoCD
 ```bash
+kubectl config get-contexts
 argocd cluster add <context-name> --name <cluster-name>
 ```
 

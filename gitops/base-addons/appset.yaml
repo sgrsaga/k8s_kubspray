@@ -44,6 +44,18 @@ spec:
                   chart: kong
                   targetRevision: "2.52.0"
                   syncWave: "3"
+                - addon: victoria-metrics
+                  namespace: monitoring
+                  repoURL: https://victoriametrics.github.io/helm-charts/
+                  chart: victoria-metrics-k8s-stack
+                  targetRevision: "0.82.0"
+                  syncWave: "4"
+                - addon: eso
+                  namespace: external-secrets
+                  repoURL: https://charts.external-secrets.io
+                  chart: external-secrets
+                  targetRevision: "2.6.0"
+                  syncWave: "5"
 
   template:
     metadata:

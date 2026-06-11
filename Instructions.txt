@@ -14,6 +14,8 @@ ssh -i ~/.ssh/mumbai -f -N -L 6443:10.30.0.119:6443   -o ServerAliveInterval=60 
 
 ssh -i ~/.ssh/singapore -f -N -L 7443:10.31.0.198:6443   -o ServerAliveInterval=60   -o ServerAliveCountMax=3   ubuntu@13.250.51.125
 
+ssh -i ~/.ssh/jumphost -f -N -L 7443:15.204.111.69:6443   -o ServerAliveInterval=60   -o ServerAliveCountMax=3   sagara@134.199.134.29
+
 
 # Notes
 1. Make sure the include in clusters/dev-ap-south-1/group_vars/all/all.yml
